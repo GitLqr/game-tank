@@ -5,6 +5,7 @@ import com.charylin.game.business.Attackable
 import com.charylin.game.business.Blockable
 import com.charylin.game.business.Destroyable
 import com.charylin.game.business.Sufferable
+import org.itheima.kotlin.game.core.Composer
 import org.itheima.kotlin.game.core.Painter
 
 /**
@@ -23,9 +24,14 @@ class Wall(override val x: Int, override val y: Int) : Blockable, Sufferable, De
         Painter.drawImage("img/wall.gif", x, y)
     }
 
-    override fun notifySuffer(attackable: Attackable) {
-        blood -= attackable.attackPower
-    }
-
     override fun isDestroy(): Boolean = blood <= 0
+
+    override fun notifySuffer(attackable: Attackable): Array<View>? {
+        blood -= attackable.attackPower
+
+        // 音效
+        Composer.play("snd/hit.wav")
+
+        return arrayOf(Blast(x, y))
+    }
 }

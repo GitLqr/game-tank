@@ -8,5 +8,13 @@ import com.charylin.game.model.View
  * @desc 销毁的能力
  */
 interface Destroyable : View {
+    /**
+     * 是否已销毁
+     */
     fun isDestroy(): Boolean
+
+    /**
+     * 显示销毁效果
+     */
+    fun showDestroy(): Array<View>? = null
 }

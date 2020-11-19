@@ -1,62 +1,56 @@
 package com.charylin.game.model
 
 import com.charylin.game.Config
-import com.charylin.game.business.Attackable
-import com.charylin.game.business.Blockable
-import com.charylin.game.business.Movable
-import com.charylin.game.business.Sufferable
+import com.charylin.game.business.*
 import com.charylin.game.enums.Direction
 import org.itheima.kotlin.game.core.Painter
+import java.util.*
 
 /**
  * @author LQR
- * @time 2020/11/18
- * @desc 坦克
+ * @time 2020/11/19
+ * @desc 敌方坦克
  */
-class Tank(override var x: Int, override var y: Int) : Movable, Blockable, Sufferable {
+class Enemy(override var x: Int, override var y: Int) : Movable, AutoMovable, Blockable, AutoShot, Sufferable,
+    Destroyable {
+
+    override var currentDirection: Direction = Direction.DOWN
+    override val speed: Int = 8
 
     override val width: Int = Config.block
     override val height: Int = Config.block
 
-    override var currentDirection: Direction = Direction.UP
-    override val speed: Int = 8
-
-    // 坦克不可以走的方向
     private var badDirection: Direction? = null
 
-    // 血量
-    override var blood: Int = 20
+    private var lastShotTime = 0L
+    private var shotFrequency = 800
+
+    private var lastMoveTime = 0L
+    private var moveFrequency = 50
+
+    override var blood: Int = 2
 
     override fun draw() {
-        // 根据坦克的方向进行绘制
-
-        // 方式一：
-        // when (currentDirection) {
-        //     Direction.UP -> Painter.drawImage("img/tank_u.gif", x, y)
-        //     Direction.DOWN -> Painter.drawImage("img/tank_d.gif", x, y)
-        //     Direction.LEFT -> Painter.drawImage("img/tank_l.gif", x, y)
-        //     Direction.RIGHT -> Painter.drawImage("img/tank_r.gif", x, y)
-        // }
-
-        // 方式二：
         val imagePath = when (currentDirection) {
-            Direction.UP -> "img/tank_u.gif"
-            Direction.DOWN -> "img/tank_d.gif"
-            Direction.LEFT -> "img/tank_l.gif"
-            Direction.RIGHT -> "img/tank_r.gif"
+            Direction.UP -> "img/enemy_1_u.gif"
+            Direction.DOWN -> "img/enemy_1_d.gif"
+            Direction.LEFT -> "img/enemy_1_l.gif"
+            Direction.RIGHT -> "img/enemy_1_r.gif"
         }
         Painter.drawImage(imagePath, x, y)
     }
 
-    fun move(direction: Direction) {
-        // 判断是否是往要碰撞的方向走
-        if (this.badDirection == direction) {
-            return
-        }
+    override fun notifyCollision(direction: Direction?, block: Blockable?) {
+        badDirection = direction
+    }
 
-        // 当前方向，和希望移动的方向不一致时，只做方向改变
-        if (this.currentDirection != direction) {
-            this.currentDirection = direction
+    override fun autoMove() {
+        val current = System.currentTimeMillis()
+        if (current - lastMoveTime < moveFrequency) return
+        lastMoveTime = current
+
+        if (currentDirection == badDirection) {
+            currentDirection = rdmDirection(badDirection)
             return
         }
 
@@ -75,14 +69,26 @@ class Tank(override var x: Int, override var y: Int) : Movable, Blockable, Suffe
         if (y > Config.gameHeight - height) y = Config.gameHeight - height
     }
 
-    override fun notifyCollision(direction: Direction?, block: Blockable?) {
-        this.badDirection = direction
+    private fun rdmDirection(bad: Direction?): Direction {
+        val i = Random().nextInt(4)
+        val direction = when (i) {
+            0 -> Direction.UP
+            1 -> Direction.DOWN
+            2 -> Direction.LEFT
+            3 -> Direction.RIGHT
+            else -> Direction.UP
+        }
+        if (direction == bad) {
+            return rdmDirection(bad)
+        }
+        return direction
     }
 
-    /**
-     * 发射子弹
-     */
-    fun shot(): Bullet {
+    override fun autoShot(): View? {
+        val current = System.currentTimeMillis()
+        if (current - lastShotTime < shotFrequency) return null
+        lastShotTime = current
+
         return Bullet(this, currentDirection) { bulletWidth, bulletHeight ->
             val tankX = x
             val tankY = y
@@ -117,7 +123,14 @@ class Tank(override var x: Int, override var y: Int) : Movable, Blockable, Suffe
     }
 
     override fun notifySuffer(attackable: Attackable): Array<View>? {
+        if (attackable.owner is Enemy) {
+            // （敌）友军伤害关闭
+            return null
+        }
+
         blood -= attackable.attackPower
         return arrayOf(Blast(x, y))
     }
+
+    override fun isDestroy(): Boolean = blood <= 0
 }

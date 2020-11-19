@@ -14,8 +14,12 @@ import org.itheima.kotlin.game.core.Painter
  * @time 2020/11/18
  * @desc 子弹
  */
-class Bullet(override val currentDirection: Direction, create: (width: Int, height: Int) -> Pair<Int, Int>) :
-    AutoMovable, Destroyable, Attackable {
+class Bullet(
+    override val owner: View,
+    override val currentDirection: Direction,
+    create: (width: Int, height: Int) -> Pair<Int, Int>
+) :
+    AutoMovable, Destroyable, Attackable, Sufferable {
 
     override val width: Int
     override val height: Int
@@ -27,6 +31,7 @@ class Bullet(override val currentDirection: Direction, create: (width: Int, heig
     private var isDestroyed = false
 
     override val attackPower: Int = 1
+    override val blood: Int = 1
 
     private val imagePath: String = when (currentDirection) {
         Direction.UP -> "/img/shot_top.gif"
@@ -81,6 +86,10 @@ class Bullet(override val currentDirection: Direction, create: (width: Int, heig
 
     override fun notifyAttack(sufferable: Sufferable) {
         isDestroyed = true
+    }
+
+    override fun notifySuffer(attackable: Attackable): Array<View>? {
+        return arrayOf(Blast(x, y))
     }
 
 }

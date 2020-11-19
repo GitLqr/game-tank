@@ -9,6 +9,9 @@ import com.charylin.game.model.View
  */
 interface Attackable : View {
 
+    // 所有者
+    val owner: View
+
     // 攻击力
     val attackPower: Int
 
