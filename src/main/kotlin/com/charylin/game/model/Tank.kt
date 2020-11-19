@@ -80,22 +80,23 @@ class Tank(override var x: Int, override var y: Int) : Movable {
             Direction.LEFT -> x -= speed
             Direction.RIGHT -> x += speed
         }
-        // 将要碰撞时做判断
-        var collision = when {
-            block.y + block.height <= y -> {
-                // 如果 阻挡物 在 运动物 的上方时，不碰撞
-                false
-            }
-            y + height <= block.y -> {
-                // 如果 阻挡物 在 运动物 的下方时，不碰撞
-                false
-            }
-            block.x + block.width <= x -> {
-                // 如果 阻挡物 在 运动物 的左方时，不碰撞
-                false
-            }
-            else -> x + width > block.x
-        }
+        // 检测碰撞 下一步是否碰撞
+//        var collision = when {
+//            block.y + block.height <= y -> {
+//                // 如果 阻挡物 在 运动物 的上方时，不碰撞
+//                false
+//            }
+//            y + height <= block.y -> {
+//                // 如果 阻挡物 在 运动物 的下方时，不碰撞
+//                false
+//            }
+//            block.x + block.width <= x -> {
+//                // 如果 阻挡物 在 运动物 的左方时，不碰撞
+//                false
+//            }
+//            else -> x + width > block.x
+//        }
+        var collision = checkCollision(x, y, width, height, block.x, block.y, block.width, block.height)
 
         return if (collision) currentDirection else null
     }
@@ -125,13 +126,16 @@ class Tank(override var x: Int, override var y: Int) : Movable {
                     bulletY = tankY - bulletHeight / 2
                 }
                 Direction.DOWN -> {
-
+                    bulletX = tankX + (tankWidth - bulletWidth) / 2
+                    bulletY = tankY + tankHeight - bulletHeight / 2
                 }
                 Direction.LEFT -> {
-
+                    bulletX = tankX - bulletWidth / 2
+                    bulletY = tankY + (tankHeight - bulletHeight) / 2
                 }
                 Direction.RIGHT -> {
-
+                    bulletX = tankX + tankWidth - bulletWidth / 2
+                    bulletY = tankY + (tankHeight - bulletHeight) / 2
                 }
             }
 

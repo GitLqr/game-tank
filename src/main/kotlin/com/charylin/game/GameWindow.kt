@@ -1,13 +1,13 @@
 package com.charylin.game
 
-import com.charylin.game.business.Blockable
-import com.charylin.game.business.Movable
+import com.charylin.game.business.*
 import com.charylin.game.enums.Direction
 import com.charylin.game.model.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import org.itheima.kotlin.game.core.Window
 import java.io.File
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * @author LQR
@@ -21,7 +21,9 @@ class GameWindow : Window(
     height = Config.gameHeight
 ) {
 
-    private val views = arrayListOf<View>()
+    // private val views = arrayListOf<View>()
+    private val views = CopyOnWriteArrayList<View>() // 线程安全的集合
+
     private lateinit var tank: Tank
 
     override fun onCreate() {
@@ -106,6 +108,38 @@ class GameWindow : Window(
 
             // 找到和move碰撞的block，找到会碰撞的方向
             move.notifyCollision(badDirection, badBlock)
+
+            // 检测自动移动能力的物体,让他们自己动起来
+            views.filter { it is AutoMovable }.forEach {
+                (it as AutoMovable).autoMove()
+            }
+
+            // 检测销毁
+            views.filter { it is Destroyable }.forEach {
+                // 判断具备销毁能力的物体,是否被销毁了
+                if ((it as Destroyable).isDestroy()) {
+                    views.remove(it)
+                }
+            }
+
+            // 检测具备攻击能力的和被攻击能力的物体间是否产生碰撞
+            // 1)过滤 具备攻击能力的
+            views.filter { it is Attackable }.forEach { attack ->
+                attack as Attackable
+                // 2)过滤 受攻击能力的
+                views.filter { it is Sufferable }.forEach sufferTag@{ suffer ->
+                    suffer as Sufferable
+                    // 3)判断是否产生碰撞
+                    if (attack.isCollision(suffer)) {
+                        // 产生碰撞,找到碰撞者
+                        // 通知攻击者 产生碰撞
+                        attack.notifyAttack(suffer)
+                        // 通知受攻击者 产生碰撞
+                        suffer.notifySuffer(attack)
+                        return@sufferTag
+                    }
+                }
+            }
         }
     }
 }
